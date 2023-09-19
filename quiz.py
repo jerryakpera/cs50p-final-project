@@ -1,4 +1,4 @@
-import re, random
+import regex, random
 
 
 DIFFICULTY_MAP = {
@@ -42,6 +42,24 @@ class Quiz:
         """
         return self._questions
 
+    def get_random_option(self, choices, options):
+        while True:
+            choice = random.choice(options)
+
+            if choice in choices:
+                pass
+
+            break
+
+        return choice
+
+    def get_all_multiple_choice_options(self, questions, language):
+        return [
+            question["answer"]
+            for question in questions
+            if question["language"] == language
+        ]
+
     @questions.setter
     def questions(self, questions):
         """
@@ -61,15 +79,17 @@ class Quiz:
             return "Quiz needs at least 4 questions"
 
         random.shuffle(questions)
-        all_choices = [question["answer"] for question in questions]
 
         all_modes = [0, 1]
 
         for question in questions:
             choices = [question["answer"]]
+            possible_choices = self.get_all_multiple_choice_options(
+                questions, question["language"]
+            )
 
             for _ in range(3):
-                random_choice = random.choice(all_choices)
+                random_choice = self.get_random_option(choices, possible_choices)
                 choices.append(random_choice)
 
                 question["choices"] = choices
@@ -98,6 +118,47 @@ class Quiz:
         print("**************")
         print(" ")
 
+    def partial_match(self, users_answer, correct_answer):
+        answer_regex_pattern = r"(?:" + regex.escape(users_answer) + "){e<=1}"
+        answer_search = regex.findall(answer_regex_pattern, correct_answer)
+
+        correct_answer_length = len(correct_answer)
+        users_answer_length = len(users_answer)
+
+        upper_bounds = correct_answer_length + round(correct_answer_length / 3)
+        lower_bounds = correct_answer_length - round(correct_answer_length / 3)
+
+        return (
+            len(answer_search) > 0
+            and lower_bounds <= users_answer_length <= upper_bounds
+        )
+
+    def check_answer(self, users_answer, correct_answer):
+        if users_answer == correct_answer:
+            return True
+
+        users_answer_lines = len(users_answer)
+
+        if users_answer_lines == 1:
+            return self.partial_match(users_answer[0], correct_answer)
+
+        correct_answer_lines = correct_answer.split("\n")
+        correct_answer_lines_length = len(correct_answer_lines)
+
+        if users_answer_lines != correct_answer_lines_length:
+            return False
+
+        for i, line in enumerate(users_answer):
+            trimmed_user_answer_line = line.strip()
+            trimmed_correct_answer_line = correct_answer_lines[i].strip()
+
+            if not self.partial_match(
+                trimmed_user_answer_line, trimmed_correct_answer_line
+            ):
+                return False
+
+        return True
+
     def start(self):
         """
         Method to start quiz
@@ -114,7 +175,9 @@ class Quiz:
             except KeyboardInterrupt:
                 break
 
-            if answer == question["answer"]:
+            answer_is_correct = self.check_answer(answer, question["answer"])
+
+            if answer_is_correct:
                 self.correct_answer(question["no"])
             else:
                 self.incorrect_answer(question)
@@ -206,7 +269,7 @@ class Quiz:
         # If mode is type => ask for type option
         if question["mode"] == 0:
             print(" ")
-            users_answer = input("Type in the answer \n")
+            users_answer = self.get_users_typed_answer()
 
         # If mode is multiple choice => ask for letter
         if question["mode"] == 1:
@@ -218,6 +281,20 @@ class Quiz:
             users_answer = question["choices"][answer_index]
 
         return users_answer
+
+    def get_users_typed_answer(self):
+        print("Type your answer. Press enter after a blank line to submit \n")
+        lines = []
+        while True:
+            line = input()
+            if line:
+                lines.append(line)
+            else:
+                break
+
+        text = "\n".join(lines)
+
+        return lines
 
     def get_user_choice(self, choices):
         """

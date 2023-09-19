@@ -4,28 +4,39 @@ import csv
 class Question:
     """Documentation for the Question class."""
 
-    questions_fieldnames = [
-        "no",
-        "question",
-        "answer",
-        "language",
-    ]
-    file_name = "questions.csv"
+    def __init__(self, file_name) -> None:
+        self.questions_fieldnames = [
+            "no",
+            "question",
+            "answer",
+            "language",
+        ]
+        self.file_name = file_name
+        self.initialize_file()
 
-    @classmethod
-    def set_file_name(cls, file_name):
+    @property
+    def file_name(self):
         """
         Change the file name to store questions
 
         Parameters:
             file_name (str): The name of the file to store questions
         """
-        cls.file_name = file_name
+        return self._file_name
 
-    @classmethod
-    def add_questions(cls, questions):
+    @file_name.setter
+    def file_name(self, file_name):
         """
-        Adds questions to cls.file_name csv
+        Change the file name to store questions
+
+        Parameters:
+            file_name (str): The name of the file to store questions
+        """
+        self._file_name = file_name
+
+    def add_questions(self, questions):
+        """
+        Adds questions to self.file_name csv
 
         Parameters:
             questions: (list of (str, str))
@@ -34,12 +45,11 @@ class Question:
             None
         """
         for ques in questions:
-            cls.add_question(*ques)
+            self.add_question(*ques)
 
-    @classmethod
-    def add_question(cls, question, answer, language="python"):
+    def add_question(self, question, answer, language="python"):
         """
-        Adds a question to cls.file_name csv
+        Adds a question to self.file_name csv
 
         Parameters:
             question (str): A string containing the question
@@ -48,7 +58,7 @@ class Question:
         Returns:
             None
         """
-        last_no = cls.get_last_question_no()
+        last_no = self.next_question_no
 
         new_question = {
             "no": last_no,
@@ -57,18 +67,19 @@ class Question:
             "language": language,
         }
 
-        headers = cls.get_first_row()
+        headers = self.first_row
 
-        with open(cls.file_name, "a", newline="") as questions_file:
-            writer = csv.DictWriter(questions_file, fieldnames=cls.questions_fieldnames)
+        with open(self.file_name, "a", newline="") as questions_file:
+            writer = csv.DictWriter(
+                questions_file, fieldnames=self.questions_fieldnames
+            )
 
             if not headers:
                 writer.writeheader()
 
             writer.writerow(new_question)
 
-    @classmethod
-    def get_questions(cls, language="all"):
+    def get_questions(self, language="all"):
         """
         Get all/language questions from csv file
 
@@ -80,7 +91,7 @@ class Question:
         """
         questions = []
 
-        with open(cls.file_name, newline="") as questions_file:
+        with open(self.file_name, newline="") as questions_file:
             file_reader = csv.DictReader(questions_file)
 
             for question_row in file_reader:
@@ -94,8 +105,7 @@ class Question:
 
         return questions
 
-    @classmethod
-    def find_question(cls, no):
+    def find_question(self, no):
         """
         Finds and returns a question from csv file
 
@@ -105,39 +115,48 @@ class Question:
         Returns:
             question (dict): Dict containing no, question and answer fields
         """
-        questions = cls.get_questions()
+        questions = self.get_questions()
 
         return [ques for ques in questions if ques.get("no") == str(no)]
 
-    @classmethod
-    def get_first_row(cls):
+    @property
+    def first_row(self):
         """
         Retrieve the first row of the csv
 
         Returns:
             field_names (list): List of items in first row
         """
-        with open(cls.file_name, newline="") as questions_file:
+        with open(self.file_name, newline="") as questions_file:
             file_reader = csv.DictReader(questions_file)
             return file_reader.fieldnames
 
-    @classmethod
-    def get_last_question_no(cls):
+    @property
+    def last_question_no(self):
         """
         Retrieve the no of the last question
 
         Returns:
             no (str or int): Number for the next question
         """
-        questions = cls.get_questions()
+        questions = self.get_questions()
 
         try:
-            return int(questions[-1]["no"]) + 1
+            return int(questions[-1]["no"])
         except IndexError:
-            return 1
+            return 0
 
-    @classmethod
-    def delete_question(cls, row_no):
+    @property
+    def next_question_no(self):
+        """
+        Retrieve the index for the next question
+
+        Returns:
+            no (str or int): Number for the next question
+        """
+        return self.last_question_no + 1
+
+    def delete_questions(self, numbers):
         """
         Remove question from csv file
 
@@ -147,27 +166,41 @@ class Question:
         Returns:
             None
         """
-        questions = cls.get_questions()
+        questions = self.get_questions()
         filtered_questions = [
-            question for question in questions if question["no"] != str(row_no)
+            question for question in questions if int(question["no"]) not in numbers
         ]
 
-        with open(cls.file_name, "w", newline="") as questions_file:
-            writer = csv.DictWriter(questions_file, fieldnames=cls.questions_fieldnames)
+        with open(self.file_name, "w", newline="") as questions_file:
+            writer = csv.DictWriter(
+                questions_file, fieldnames=self.questions_fieldnames
+            )
             writer.writeheader()
 
             for i, question in enumerate(filtered_questions):
                 question["no"] = i + 1
                 writer.writerow(question)
 
-    @classmethod
-    def get_languages(cls):
+    def get_languages(self):
         languages = []
 
-        for question in cls.get_questions():
+        for question in self.get_questions():
             language = question["language"]
 
             if language not in languages:
                 languages.append(language)
 
         return languages
+
+    def initialize_file(self):
+        try:
+            with open(self.file_name, newline=""):
+                ...
+        except FileNotFoundError:
+            with open(self.file_name, "w"):
+                ...
+
+    def clear_file(self):
+        # opening the file with w+ mode truncates the file
+        f = open(self.file_name, "w+")
+        f.close()

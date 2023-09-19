@@ -139,9 +139,4 @@ questions = [
         "let subset = myArray.slice(2, 5);",
         "javascript",
     ),
-    (
-        "Using pip, create a requirements.txt file with a list of dependencies for a python project.",
-        "pip freeze > requirements.txt",
-        "python",
-    ),
 ]

@@ -1,12 +1,15 @@
-import re, argparse
+import sys
+import notice
+import argparse
 
-
-from quiz import Quiz, DIFFICULTY_MAP, MODE_MAP
 from question import Question
 from questions import questions
+from quiz import Quiz, DIFFICULTY_MAP, MODE_MAP
 
 
 def main():
+    question = Question("questions.csv")
+
     parser = argparse.ArgumentParser(
         prog="Terminal Quizzer", description="Terminal quiz master to practice syntax"
     )
@@ -25,25 +28,98 @@ def main():
     flag = args.q[0]
 
     match (flag):
-        case "add":
-            add_question()
-            question_added()
         case "load":
-            load_questions(args.q)
-            questions_loaded()
+            load_questions(question, questions)
+        case "add":
+            question_input = get_question_input()
+
+            add_question(question, question_input)
+            notice.added_question()
         case "view":
             print("Viewing question(s)")
             print("--------------------")
             print(" ")
-            view_questions(args.q)
+            view_questions(question, args.q)
         case "delete":
-            remove_question(args.q)
+            handle_delete_question(question, args.q)
         case "start":
-            start_quiz()
+            start_quiz(question)
 
 
-def start_quiz():
-    languages = Question.get_languages()
+def load_questions(question, questions):
+    """
+    Gets users input for question, answer and topic
+    Adds the question to the questions csv file
+
+    Parameters:
+        question: instance of Question class
+        questions: List of tuples containing (question, answer, language)
+
+    Returns:
+        None
+    """
+    question.add_questions(questions)
+
+    notice.loaded_questions()
+    notice.start_quiz()
+
+
+def get_question_input():
+    question = input("Question: ")
+    print("----------")
+
+    answer = input("Answer: ")
+    print("----------")
+
+    language = input("Language: ")
+    print("----------")
+
+    return question, answer, language
+
+
+def add_question(question, args):
+    """
+    Gets users input for question, answer and topic
+    Adds the question to the questions csv file
+
+    Returns:
+        None
+    """
+    question.add_question(*args)
+
+
+def convert_to_int(str):
+    try:
+        return int(str)
+    except ValueError:
+        sys.exit(f"{str} must be a number")
+
+
+def get_delete_input(args):
+    if len(args) == 3:
+        _, start, end = args
+
+        end_no = convert_to_int(end)
+        start_no = convert_to_int(start)
+
+        numbers_to_delete = list(range(start_no, end_no))
+    elif len(args) == 2:
+        _, question_no = args
+        question_no = convert_to_int(question_no)
+
+        numbers_to_delete = []
+        numbers_to_delete.append(question_no)
+    else:
+        notice.delete_question()
+        print(" ")
+        notice.delete_questions()
+        sys.exit()
+
+    return numbers_to_delete
+
+
+def start_quiz(question):
+    languages = question.get_languages()
     languages.insert(0, "all")
 
     languages_str = " | ".join(languages)
@@ -79,7 +155,7 @@ def start_quiz():
         print("Mode not found. Mixed mode selected")
         selected_mode = "Mixed"
 
-    questions = Question.get_questions(selected_language)
+    questions = question.get_questions(selected_language)
 
     quiz = Quiz(questions, selected_difficulty, selected_mode)
     quiz.start()
@@ -111,54 +187,7 @@ def get_question_no(args):
     return question_no
 
 
-def add_question():
-    """
-    Gets users input for question, answer and topic
-    Adds the question to the questions csv file
-
-    Returns:
-        None
-    """
-    question = input("Question: ")
-    print("----------")
-
-    answer = input("Answer: ")
-    print("----------")
-
-    language = input("Language: ")
-    print("----------")
-
-    Question.add_question(question, answer, language)
-
-
-def load_questions(args):
-    """
-    Gets users input for question, answer and topic
-    Adds the question to the questions csv file
-
-    Returns:
-        None
-    """
-    Question.add_questions(questions)
-
-
-def question_added():
-    print("✅")
-    print("Question added successfully")
-
-    print(" ")
-    print("Run python main.py -q start to start a quiz")
-
-
-def questions_loaded():
-    print("✅")
-    print("Question loaded successfully")
-
-    print(" ")
-    print("Run python main.py -q start to start a quiz")
-
-
-def view_questions(args):
+def view_questions(question, args):
     """
     Returns question if question_no is provided
     Otherwise returns all saved questions
@@ -173,47 +202,17 @@ def view_questions(args):
     question_no = get_question_no(args)
 
     if question_no >= 0:
-        questions = Question.find_question(question_no)
+        questions = question.find_question(question_no)
     else:
-        questions = Question.get_questions()
+        questions = question.get_questions()
 
     display_questions(questions)
     print(" ")
 
 
-def remove_question(args):
-    """
-    Remove question from saved questions
-
-    Parameters:
-        question_no (str): No of question to remove
-
-    Returns:
-        None
-    """
-
-    question_no = get_question_no(args)
-
-    if question_no >= 0:
-        question = Question.find_question(question_no)
-
-        if len(question) == 0:
-            print("No question with this no")
-            return
-
-        print(f"{question[0]['no']}. {question[0]['question']}")
-
-        confirm = input("Delete question (y | n): ")
-
-        if confirm.lower() != "y":
-            return
-
-        Question.delete_question(question_no)
-
-        print(" ")
-        print("✅ Question deleted!")
-    else:
-        print("python main.py -q delete <question_no>")
+def handle_delete_question(question, args):
+    numbers_to_delete = get_delete_input(args)
+    question.delete_questions(numbers_to_delete)
 
 
 if __name__ == "__main__":
