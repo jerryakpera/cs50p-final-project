@@ -1,17 +1,5 @@
 import regex, random
-
-
-DIFFICULTY_MAP = {
-    "Easy": 7,
-    "Medium": 5,
-    "Hard": 3,
-}
-
-MODE_MAP = {
-    "Type": 0,
-    "Multiple": 1,
-    "Mixed": 2,
-}
+import Question
 
 
 class Quiz:
@@ -20,20 +8,23 @@ class Quiz:
 
     Parameters:
         questions (list): List of questions with question and answer fields.
-        difficulty (str): Easy, Medium or Hard difficulty.
-        mode (str): Type, Multiple, or Mixed mode.
 
     Returns:
         quiz (Quiz): New instance of the quiz object
     """
 
-    def __init__(self, questions, difficulty, mode) -> None:
+    def __init__(self, questions) -> None:
+        self.lives = 3
         self.streak = 0
-        self.mode = MODE_MAP[mode]
-        self.lives = DIFFICULTY_MAP[difficulty]
-        self.difficulty = DIFFICULTY_MAP[difficulty]
-
         self.questions = questions
+
+    @property
+    def lives(self):
+        return self._lives
+
+    @lives.setter
+    def lives(self, lives):
+        self._lives = lives
 
     @property
     def questions(self):
@@ -41,24 +32,6 @@ class Quiz:
         Returns the all questions in quiz
         """
         return self._questions
-
-    def get_random_option(self, choices, options):
-        while True:
-            choice = random.choice(options)
-
-            if choice in choices:
-                pass
-
-            break
-
-        return choice
-
-    def get_all_multiple_choice_options(self, questions, language):
-        return [
-            question["answer"]
-            for question in questions
-            if question["language"] == language
-        ]
 
     @questions.setter
     def questions(self, questions):
@@ -72,33 +45,37 @@ class Quiz:
         Returns:
             None
         """
-        self._questions = []
+        self._questions = questions
 
-        # Require the questions to be at least 4
-        if len(questions) < 4:
-            return "Quiz needs at least 4 questions"
-
-        random.shuffle(questions)
-
-        all_modes = [0, 1]
+    def generate_choices(self, questions):
+        questions_with_choices = []
 
         for question in questions:
+            # Add the questions answer as the first choice
             choices = [question["answer"]]
-            possible_choices = self.get_all_multiple_choice_options(
-                questions, question["language"]
-            )
+
+            # List of all choices
+            possible_choices = [question["answer"] for question in questions]
 
             for _ in range(3):
                 random_choice = self.get_random_option(choices, possible_choices)
                 choices.append(random_choice)
 
-                question["choices"] = choices
-                if self.mode in all_modes:
-                    question["mode"] = self.mode
-                else:
-                    question["mode"] = random.choice(all_modes)
+            question["choices"] = choices
+            questions_with_choices.append(question)
 
-            self._questions.append(question)
+        return questions_with_choices
+
+    def get_random_option(self, choices, options):
+        while True:
+            choice = random.choice(options)
+
+            if choice in choices:
+                pass
+
+            break
+
+        return choice
 
     def end_game(self):
         """
@@ -118,12 +95,18 @@ class Quiz:
         print("**************")
         print(" ")
 
-    def partial_match(self, users_answer, correct_answer):
-        answer_regex_pattern = r"(?:" + regex.escape(users_answer) + "){e<=1}"
-        answer_search = regex.findall(answer_regex_pattern, correct_answer)
+    def replace_quotes(self, str):
+        return str.replace("'", '"')
 
-        correct_answer_length = len(correct_answer)
-        users_answer_length = len(users_answer)
+    def partial_match(self, users_answer, correct_answer):
+        u_answer = self.replace_quotes(users_answer)
+        c_answer = self.replace_quotes(correct_answer)
+
+        answer_regex_pattern = r"(?:" + regex.escape(u_answer) + "){e<=1}"
+        answer_search = regex.findall(answer_regex_pattern, c_answer)
+
+        correct_answer_length = len(c_answer)
+        users_answer_length = len(u_answer)
 
         upper_bounds = correct_answer_length + round(correct_answer_length / 3)
         lower_bounds = correct_answer_length - round(correct_answer_length / 3)
@@ -142,7 +125,7 @@ class Quiz:
         if users_answer_lines == 1:
             return self.partial_match(users_answer[0], correct_answer)
 
-        correct_answer_lines = correct_answer.split("\n")
+        correct_answer_lines = correct_answer.strip().split("\n")
         correct_answer_lines_length = len(correct_answer_lines)
 
         if users_answer_lines != correct_answer_lines_length:
@@ -159,38 +142,6 @@ class Quiz:
 
         return True
 
-    def start(self):
-        """
-        Method to start quiz
-        Loops through each question in Quiz.questions and asks questions
-
-        Handles correct or wrong logic
-        """
-        self.score = 0
-
-        for question in self.questions:
-            self.display_quiz_header()
-            try:
-                answer = self.ask_question(question)
-            except KeyboardInterrupt:
-                break
-
-            answer_is_correct = self.check_answer(answer, question["answer"])
-
-            if answer_is_correct:
-                self.correct_answer(question["no"])
-            else:
-                self.incorrect_answer(question)
-
-            if not self.game_alive:
-                break
-            else:
-                if self.streak >= (10 - self.difficulty):
-                    self.streak = 0
-                    self.lives += 1
-
-        self.end_game()
-
     @property
     def game_alive(self):
         """
@@ -199,41 +150,6 @@ class Quiz:
         """
         return self.lives > 0
 
-    def correct_answer(self, question_no):
-        """
-        Handles correct answer logic
-        Removes the question from the list of questions
-
-        Parameters:
-            question_no (str): THe no of the question the user got correct
-        """
-        self.score += 1
-        self.streak += 1
-        print("✅ Correct!")
-
-        self._questions = [
-            question for question in self.questions if question["no"] != question_no
-        ]
-
-    def incorrect_answer(self, question):
-        """
-        Handles login for incorrect answer
-        Reduce score by 1
-        Reduce lives by 1
-        Resets streak
-
-        Parameters:
-            question (dict): Adds the incorrect question to the end of the questions to be asked
-        """
-        self.streak = 0
-        self.score -= 1
-        self.lives -= 1
-        print(" ")
-        print("🔴 Incorrect!")
-        print(f"Correct answer: {question['answer']}")
-
-        self._questions.append(question)
-
     @property
     def remaining_lives(self):
         """
@@ -241,15 +157,35 @@ class Quiz:
         """
         return "❤️" * self.lives
 
-    def display_quiz_header(self):
+    @property
+    def current_streak(self):
+        """
+        Return no of fire emogis to signify users streak
+        """
+        return "🔥" * self.streak
+
+    def display_quiz_header(self, questions):
         """
         Display the header for each question
         """
         print(" ")
         print("----------")
-        print(f"Questions left {len(self.questions)}")
-        print("Lives:", self.remaining_lives)
-        print("Score:", self.score)
+        print(
+            f"Questions",
+            f"Score",
+            f"Health",
+            f"Streak",
+            sep="\t\t",
+        )
+        print(
+            f"{len(questions)} {' ' * len('questions')}",
+            f"{self.score}",
+            f"{self.remaining_lives}",
+            f"{self.current_streak}",
+            sep="\t\t",
+        )
+        # print(self.remaining_lives, end="\t")
+        # print(self.current_streak, end="\t")
         print(" ")
 
     def ask_question(self, question):
@@ -262,17 +198,23 @@ class Quiz:
         Returns:
             users_answer (str): The answer the user typed
         """
+
+        # 0: Typed answers
+        # 1: Multiple choice
+        # [0, 1]: Mixed
+        mode = 0
+
         # Ask the question
         print(f"💻 {question['language']}")
         print(question["question"])
 
         # If mode is type => ask for type option
-        if question["mode"] == 0:
+        if mode == 0:
             print(" ")
             users_answer = self.get_users_typed_answer()
 
         # If mode is multiple choice => ask for letter
-        if question["mode"] == 1:
+        if mode == 1:
             letter_keys = {"A": 0, "B": 1, "C": 2, "D": 3}
             print(" ")
             users_letter = self.get_user_choice(question["choices"])
@@ -341,3 +283,51 @@ class Quiz:
             choices_display.append(choice_display)
 
         return choices_display
+
+    def start(self):
+        """
+        Method to start quiz
+        Loops through each question in Quiz.questions and asks questions
+
+        Handles correct or wrong logic
+        """
+        self.score = 0
+        self.streak = 0
+
+        quiz_questions = self.generate_choices(self.questions)
+
+        while len(quiz_questions) > 0:
+            question = random.choice(quiz_questions)
+
+            self.display_quiz_header(quiz_questions)
+            question_no = question["no"]
+
+            answer = self.ask_question(question)
+            answer_is_correct = self.check_answer(answer, question["answer"])
+
+            if answer_is_correct:
+                self.score += 1
+                self.streak += 1
+                print("✅ Correct!")
+
+                quiz_questions = [
+                    _question
+                    for _question in quiz_questions
+                    if _question["no"] != question_no
+                ]
+            else:
+                self.streak = 0
+                self.score -= 1
+                self.lives -= 1
+
+                print("🔴 Incorrect!")
+                print("Correct Answer: ", question["answer"])
+
+            if self.streak >= 3:
+                self.streak = 0
+                self.lives += 1
+
+            if not self.game_alive:
+                break
+
+        self.end_game()

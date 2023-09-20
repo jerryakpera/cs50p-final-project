@@ -1,0 +1,97 @@
+no,question,answer,language
+1,Declare a Python variable 'name' and assign it the value 'John'.,"name = 'John'
+",python
+2,Write a Python function called 'add' that takes two parameters 'a' and 'b' and returns their sum.,"def add(a, b):
+    return a + b
+",python
+3,"Create a Python list named 'colors' containing the strings 'red', 'green', and 'blue'.","colors = ['red', 'green', 'blue']
+",python
+4,Write a 'for' loop in Python that iterates from 1 to 5 and prints each number.,"for i in range(1, 6):
+    print(i)
+",python
+5,Define a Python dictionary 'person' with keys 'name' (string) and 'age' (integer).,"person = {'name': 'John', 'age': 30}
+",python
+6,"Write a Python function 'is_even' that takes an integer 'num' as an argument and returns True if it's even, False otherwise.","def is_even(num):
+    return num % 2 == 0
+",python
+7,Create a Python class 'Car' with an '__init__' method that initializes 'make' and 'model' attributes.,"class Car:
+    def __init__(self, make, model):
+        self.make = make
+        self.model = model
+",python
+8,How can you remove an element at a specific index from a Python list?,"You can use 'del' statement or 'pop()' method, e.g., 'del mylist[index]' or 'mylist.pop(index)'
+",python
+9,Write Python code to check if a given string 'text' contains the word 'apple'.,"text = 'This is an apple.'
+if 'apple' in text:
+    print('Contains apple.')
+else:
+    print('Does not contain apple.')
+",python
+10,"Create a Python function 'greet' that takes a name as an argument and prints 'Hello, <name>!'","def greet(name):
+    print(f'Hello, {name}!')
+",python
+11,Define a Python class 'Rectangle' with 'width' and 'height' attributes and a method 'area' that calculates the area.,"class Rectangle:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+    def area(self):
+        return self.width * self.height
+",python
+12,Write Python code to read the contents of a file named 'example.txt' and store it in a variable 'content'.,"with open('example.txt', 'r') as file:
+    content = file.read()
+",python
+13,Create a Python list 'numbers' containing integers from 1 to 10 using a list comprehension.,"numbers = [i for i in range(1, 11)]
+",python
+14,Write Python code to reverse a string 'text' and store the result in a variable 'reversed_text'.,"text = 'Hello'
+reversed_text = text[::-1]
+",python
+15,Define a Python function 'cube' that takes a number 'x' as an argument and returns the cube of 'x'.,"def cube(x):
+    return x**3
+",python
+16,Declare a JavaScript variable 'name' and assign it the value 'John'.,"var name = 'John';
+",javascript
+17,Write a JavaScript function called 'add' that takes two parameters 'a' and 'b' and returns their sum.,"function add(a, b) {
+  return a + b;
+}
+",javascript
+18,"Create a JavaScript array named 'colors' containing the strings 'red', 'green', and 'blue'.","var colors = ['red', 'green', 'blue'];
+",javascript
+19,Write a 'for' loop in JavaScript that iterates from 1 to 5 and logs each number to the console.,"for (let i = 1; i <= 5; i++) {
+  console.log(i);
+}
+",javascript
+20,Define a JavaScript object 'person' with properties 'name' (string) and 'age' (number).,"var person = {
+  name: 'John',
+  age: 30
+};
+",javascript
+21,"Write a JavaScript function 'isEven' that takes an integer 'num' as an argument and returns true if it's even, false otherwise.","function isEven(num) {
+  return num % 2 === 0;
+}
+",javascript
+22,Create an HTML button with the text 'Click Me' using JavaScript and append it to the DOM.,"var button = document.createElement('button');
+button.textContent = 'Click Me';
+document.body.appendChild(button);
+",javascript
+23,"Create an anonymous function in JavaScript that alerts the message 'Hello, World!' when invoked.","(function() {
+  alert('Hello, World!');
+})();
+",javascript
+24,Define a JavaScript function 'multiply' that takes two parameters 'x' and 'y' and returns their product.,"function multiply(x, y) {
+  return x * y;
+}
+",javascript
+25,Write JavaScript code to change the background color of an HTML element with the id 'myElement' to 'blue'.,"document.getElementById('myElement').style.backgroundColor = 'blue';
+",javascript
+26,Create an array 'numbers' containing integers from 1 to 10 using a JavaScript loop.,"var numbers = [];
+for (let i = 1; i <= 10; i++) {
+  numbers.push(i);
+}
+",javascript
+27,Write JavaScript code to reverse a string 'str' and store the result in a variable 'reversedStr'.,"var str = 'Hello';
+var reversedStr = str.split('').reverse().join('');
+",javascript
+28,Define a JavaScript function 'square' that takes a number 'x' and returns the square of 'x'.,"function square(x) {
+  return x * x;
+}
+",javascript

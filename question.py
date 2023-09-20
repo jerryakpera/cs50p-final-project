@@ -14,26 +14,6 @@ class Question:
         self.file_name = file_name
         self.initialize_file()
 
-    @property
-    def file_name(self):
-        """
-        Change the file name to store questions
-
-        Parameters:
-            file_name (str): The name of the file to store questions
-        """
-        return self._file_name
-
-    @file_name.setter
-    def file_name(self, file_name):
-        """
-        Change the file name to store questions
-
-        Parameters:
-            file_name (str): The name of the file to store questions
-        """
-        self._file_name = file_name
-
     def add_questions(self, questions):
         """
         Adds questions to self.file_name csv
@@ -79,12 +59,11 @@ class Question:
 
             writer.writerow(new_question)
 
-    def get_questions(self, language="all"):
+    def get_questions(self):
         """
-        Get all/language questions from csv file
+        Get all questions from csv file
 
         Parameters:
-            language (str): Language to use to filter out questions
 
         Returns:
             questions (list of dicts): List of dicts with questions and answers
@@ -95,17 +74,11 @@ class Question:
             file_reader = csv.DictReader(questions_file)
 
             for question_row in file_reader:
-                if language == "all":
-                    questions.append(question_row)
-                    pass
-
-                if question_row["language"] == language:
-                    questions.append(question_row)
-                    pass
+                questions.append(question_row)
 
         return questions
 
-    def find_question(self, no):
+    def filter_questions_by_no(self, question_nos):
         """
         Finds and returns a question from csv file
 
@@ -117,7 +90,10 @@ class Question:
         """
         questions = self.get_questions()
 
-        return [ques for ques in questions if ques.get("no") == str(no)]
+        if len(question_nos) == 1 and question_nos[0] == 0:
+            return questions
+
+        return [ques for ques in questions if int(ques.get("no")) in question_nos]
 
     @property
     def first_row(self):
@@ -167,6 +143,7 @@ class Question:
             None
         """
         questions = self.get_questions()
+
         filtered_questions = [
             question for question in questions if int(question["no"]) not in numbers
         ]
@@ -180,17 +157,6 @@ class Question:
             for i, question in enumerate(filtered_questions):
                 question["no"] = i + 1
                 writer.writerow(question)
-
-    def get_languages(self):
-        languages = []
-
-        for question in self.get_questions():
-            language = question["language"]
-
-            if language not in languages:
-                languages.append(language)
-
-        return languages
 
     def initialize_file(self):
         try:

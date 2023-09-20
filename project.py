@@ -2,48 +2,133 @@ import sys
 import notice
 import argparse
 
-from question import Question
+from Quiz import Quiz
+from Question import Question
 from questions import questions
-from quiz import Quiz, DIFFICULTY_MAP, MODE_MAP
 
 
 def main():
     question = Question("questions.csv")
+    quiz_parser(question)
 
+
+def quiz_parser(question):
     parser = argparse.ArgumentParser(
-        prog="Terminal Quizzer", description="Terminal quiz master to practice syntax"
+        prog="TerminalTrivia",
+        description="Trivia for practicing and mastering basic programming syntax",
+        epilog="Run: 'python project.py -s' to get started",
     )
 
     parser.add_argument(
-        "-q",
-        nargs="+",
-        action="extend",
-        default=[],
-        type=str,
-        help="Manage quiz and questions",
-        metavar="quiz",
+        "-i",
+        "--import_questions",
+        action="store_true",
+        help="Import list of questions",
+    )
+
+    parser.add_argument(
+        "-v",
+        "--view",
+        type=int,
+        nargs="*",
+        metavar="numbers to view",
+        dest="view_question_nos",
+        help="View question(s). Use 0 to view all",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--delete",
+        type=int,
+        nargs="*",
+        dest="delete_question_nos",
+        metavar="numbers",
+        help="Delete question(s). Use 0 to delete all",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--start",
+        type=int,
+        nargs=2,
+        metavar="(start, end)",
+        dest="quiz_numbers",
+        help="Question numbers for quiz. Use 0 for all",
+    )
+
+    parser.add_argument("-a", "--add", help="Add new question", action="store_true")
+    parser.add_argument(
+        "-c", "--clear", help="Clear all questions from file", action="store_true"
     )
 
     args = parser.parse_args()
-    flag = args.q[0]
 
-    match (flag):
-        case "load":
-            load_questions(question, questions)
-        case "add":
+    if args.quiz_numbers:
+        quiz_numbers = get_list_of_numbers(args.quiz_numbers)
+        quiz_questions = question.filter_questions_by_no(quiz_numbers)
+
+        quiz = Quiz(quiz_questions)
+
+        try:
+            quiz.start()
+        except KeyboardInterrupt:
+            quiz.end_game()
+
+        sys.exit()
+
+    if args.clear:
+        question.clear_file()
+
+        notice.cleared_questions()
+
+        sys.exit()
+
+    if args.add:
+        try:
             question_input = get_question_input()
+        except KeyboardInterrupt:
+            print("")
+            print("")
+            sys.exit("🔴 Cancelled")
 
-            add_question(question, question_input)
-            notice.added_question()
-        case "view":
-            print("Viewing question(s)")
-            print("--------------------")
-            print(" ")
-            view_questions(question, args.q)
-        case "delete":
-            handle_delete_question(question, args.q)
-        case "start":
-            start_quiz(question)
+        add_question(question, question_input)
+
+        notice.added_question()
+
+        sys.exit()
+
+    if args.import_questions:
+        load_questions(question, questions)
+        sys.exit()
+
+    if args.view_question_nos:
+        # Get the numbers of the questions to view while removing duplicates
+        filter_question_numbers = get_list_of_numbers(args.view_question_nos)
+        questions_to_display = question.filter_questions_by_no(filter_question_numbers)
+
+        display_questions(questions_to_display)
+        sys.exit()
+
+    if args.delete_question_nos:
+        # Get the numbers of the questions to delete while removing duplicates
+        filter_question_numbers = get_list_of_numbers(args.delete_question_nos)
+        question.delete_questions(filter_question_numbers)
+
+        notice.question_deleted()
+        sys.exit()
+
+    parser.print_help()
+
+
+def get_list_of_numbers(numbers_list):
+    filter_question_numbers = list(set(numbers_list))
+    filter_question_numbers = sorted(filter_question_numbers)
+
+    if len(filter_question_numbers) == 2:
+        start, end = filter_question_numbers
+        filter_question_numbers = list(range(start, end + 1))
+
+    return filter_question_numbers
 
 
 def load_questions(question, questions):
@@ -61,18 +146,17 @@ def load_questions(question, questions):
     question.add_questions(questions)
 
     notice.loaded_questions()
-    notice.start_quiz()
 
 
 def get_question_input():
-    question = input("Question: ")
-    print("----------")
+    question = input("Type the question: ")
+    print(" ")
 
-    answer = input("Answer: ")
-    print("----------")
+    answer = input("Type the answer: ")
+    print(" ")
 
     language = input("Language: ")
-    print("----------")
+    print(" ")
 
     return question, answer, language
 
@@ -88,131 +172,21 @@ def add_question(question, args):
     question.add_question(*args)
 
 
-def convert_to_int(str):
-    try:
-        return int(str)
-    except ValueError:
-        sys.exit(f"{str} must be a number")
-
-
-def get_delete_input(args):
-    if len(args) == 3:
-        _, start, end = args
-
-        end_no = convert_to_int(end)
-        start_no = convert_to_int(start)
-
-        numbers_to_delete = list(range(start_no, end_no))
-    elif len(args) == 2:
-        _, question_no = args
-        question_no = convert_to_int(question_no)
-
-        numbers_to_delete = []
-        numbers_to_delete.append(question_no)
-    else:
-        notice.delete_question()
-        print(" ")
-        notice.delete_questions()
-        sys.exit()
-
-    return numbers_to_delete
-
-
-def start_quiz(question):
-    languages = question.get_languages()
-    languages.insert(0, "all")
-
-    languages_str = " | ".join(languages)
-
-    mode_str = " | ".join(MODE_MAP.keys())
-    difficulty_str = " | ".join(DIFFICULTY_MAP.keys())
-
-    # Select the language to be quizzed on
-    print(f"Select programming language: ({languages_str})")
-    selected_language = input("Language: ")
-
-    if selected_language.lower() not in languages:
-        print("Language not found. all languages selected")
-        selected_language = "all"
-
-    print(" ")
-
-    # Select the quiz difficulty
-    print(f"Select difficulty: ({difficulty_str})")
-    selected_difficulty = input("Difficulty: ").strip().capitalize()
-
-    if selected_difficulty not in DIFFICULTY_MAP:
-        print("Difficulty not found. Medium difficulty selected")
-        selected_difficulty = "Medium"
-
-    print(" ")
-
-    # Select the quiz mode
-    print(f"Select mode: ({mode_str})")
-    selected_mode = input("Mode: ").strip().capitalize()
-
-    if selected_mode not in MODE_MAP:
-        print("Mode not found. Mixed mode selected")
-        selected_mode = "Mixed"
-
-    questions = question.get_questions(selected_language)
-
-    quiz = Quiz(questions, selected_difficulty, selected_mode)
-    quiz.start()
-
-
 def display_questions(questions):
     if len(questions) == 0:
         print("🪹 Nothing to display")
 
     for question in questions:
-        print(f"{question['no']}. {question['language']}")
-        print(f"Question: {question['question']}")
-        print(f"Answer: {question['answer']}")
-        print("____________")
         print(" ")
-
-
-def get_question_no(args):
-    try:
-        question_no = args[1]
-    except IndexError:
-        return -1
-
-    try:
-        question_no = int(question_no)
-    except TypeError:
-        return -1
-
-    return question_no
-
-
-def view_questions(question, args):
-    """
-    Returns question if question_no is provided
-    Otherwise returns all saved questions
-
-    Parameters:
-        question_no (str): str of the question no to display
-
-    Returns:
-        questions [question]: List of questions
-    """
-
-    question_no = get_question_no(args)
-
-    if question_no >= 0:
-        questions = question.find_question(question_no)
-    else:
-        questions = question.get_questions()
-
-    display_questions(questions)
-    print(" ")
-
-
-def handle_delete_question(question, args):
-    numbers_to_delete = get_delete_input(args)
-    question.delete_questions(numbers_to_delete)
+        print(f"Question {question['no']} ({question['language']})")
+        print(question["question"])
+        print(" ")
+        print("Answer")
+        print(question["answer"])
+        print(" ")
+        print(" ")
+        print("----------")
+        print(" ")
 
 
 if __name__ == "__main__":

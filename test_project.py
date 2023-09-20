@@ -1,49 +1,42 @@
-from question import Question
+from Question import Question
 from questions import questions
-from project import add_question, handle_delete_question, load_questions
+from project import get_list_of_numbers, add_question, load_questions
 
 
-def test_remove_question():
-    question = Question("questions_test.csv")
-
-    question.clear_file()
-    load_questions(question, questions)
-    handle_delete_question(question, ["delete", "30"])
-
-    assert question.last_question_no == 29
-
-    question.clear_file()
-    load_questions(question, questions)
-    handle_delete_question(question, ["delete", "1", "10"])
-
-    assert question.last_question_no == 21
+def get_list_of_numbers():
+    assert get_list_of_numbers([1, 4]) == [1, 2, 3, 4]
+    assert get_list_of_numbers([1, 2, 3, 6]) == [1, 2, 3, 6]
+    assert get_list_of_numbers([13]) == [13]
 
 
 def test_add_question():
-    question = Question("questions_test.csv")
-    question.clear_file()
+    test_question = Question("questions_test.csv")
+    test_question.clear_file()
 
-    add_question(question, ("question", "answer", "language"))
+    assert test_question.last_question_no == 0
 
-    assert question.last_question_no == 1
+    test_question.add_question(
+        "Is this a question?", "How am I supposed to answer that?", "life"
+    )
 
-    question.clear_file()
+    assert test_question.last_question_no == 1
 
-    add_question(question, ("question", "answer", "language"))
-    add_question(question, ("question", "answer", "language"))
+    test_question.clear_file()
 
-    assert question.last_question_no == 2
+    assert test_question.last_question_no == 0
+
+    for question in questions:
+        test_question.add_question(*question)
+
+    assert test_question.last_question_no == 28
 
 
 def test_load_questions():
-    question = Question("questions_test.csv")
-    question.clear_file()
+    test_question = Question("questions_test.csv")
+    test_question.clear_file()
 
-    load_questions(question, questions)
+    assert test_question.last_question_no == 0
 
-    assert question.last_question_no == 30
+    load_questions(test_question, questions)
 
-    question.clear_file()
-
-    load_questions(question, [])
-    assert question.last_question_no == 0
+    assert test_question.last_question_no == 28

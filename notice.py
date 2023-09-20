@@ -1,22 +1,20 @@
-def delete_question():
-    print("Delete single question")
-    print("python project.py -q delete <question_no>")
-
-
-def delete_questions():
-    print("Delete range of questions")
-    print("python project.py -q delete <start_index> <end_index>")
+def question_deleted():
+    print(" ")
+    print("✅✅✅")
+    print("Deleted question(s)")
+    print(" ")
 
 
 def loaded_questions():
-    print("✅")
+    print("✅✅✅")
     print("Question loaded successfully")
 
 
 def added_question():
-    print("✅")
+    print("✅✅✅")
     print("Question added successfully")
 
 
-def start_quiz():
-    print("Run python main.py -q start to start a quiz")
+def cleared_questions():
+    print("✅✅✅")
+    print("Questions cleared successfully")
